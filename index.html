@@ -27,7 +27,6 @@ border: none;
 border-radius: 8px;
 cursor: pointer;
 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-transition: background-color 0.2s,transform 0.2s;
 }
 .greenBack{
 background-color: green;
@@ -48,9 +47,6 @@ dialog::backdrop {
   /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
   width: 90vmin;
   height: 90vmin;
-  /* 4. 画面中央に配置する（お好みで） */
-  display: block;
-  margin: 0 auto;
 }
 
 
@@ -62,14 +58,12 @@ dialog::backdrop {
 <button id="closeBtn">閉じる</button>
 </dialog>
 <p id="status"></p>
-
-<canvas id="myCanvas" width="450" height="450"><br>
+<canvas id="myCanvas" width="450" height="450"></canvas>
 <div class="controls-container">
 <button type="button" class="decide-btn">決定</button>
 <p id="player" class="greenBack">白のターン</p>
 <!-- ダイアログを開くボタン -->
 <button id="openBtn">ダイアログを開く</button>
-<p>aaa</p>
 </div>
 <script>
 let board = Array.from({ length: 8 }, () => Array(8).fill(0));
