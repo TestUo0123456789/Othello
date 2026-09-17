@@ -115,6 +115,22 @@ ctx.fill();
 }
 }
 }
+
+
+const dialog = document.getElementById('myDialog');
+const openBtn = document.getElementById('openBtn');
+const closeBtn = document.getElementById('closeBtn');
+
+// 開くボタン
+openBtn.addEventListener('click', () => {
+  dialog.showModal(); // モーダルとして表示
+});
+
+// 閉じるボタン（form method="dialog" があれば自動で閉じますが、JSで制御する場合）
+closeBtn.addEventListener('click', () => {
+  dialog.close();
+});
+
 </script>
 </body>
 </html>
