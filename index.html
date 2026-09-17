@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>オセロ</title>
 <style>
+body {
+  touch-action: manipulation;
+}
 .decide-btn{
 font-size: 20px;
 padding: 15px 40px;
@@ -25,15 +29,25 @@ dialog {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* モーダル背景のスタイル */
 dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.5);
 }
+#myCanvas {
+  /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
+  width: 90vmin;
+  height: 90vmin;
+  /* 4. 画面中央に配置する（お好みで） */
+  display: block;
+  margin: 0 auto;
+}
+
 
 </style>
 <body>
 <p id="status"></p>
-<canvas id="myCanvas" width="450" height="450"></canvas></br>
+<div class="game-container">
+
+<canvas id="myCanvas" width="450" height="450"></br>
 <button type="button" class="decide-btn">決定</button>
 <p id="player" class="greenBack">白のターン</p>
 <!-- ダイアログ本体 -->
@@ -45,36 +59,41 @@ dialog::backdrop {
     </form>
   </dialog>
 </fieldset>
-
+</div>
 <!-- ダイアログを開くボタン -->
 <button id="openBtn">ダイアログを開く</button>
 <script>
 let board = Array.from({ length: 8 }, () => Array(8).fill(0));
 // ② JavaScriptでCanvas要素を取得する
 const canvas = document.getElementById('myCanvas');
+const rect = canvas.getBoundingClientRect();
+const currentWidth = rect.width;
+const BASE_SIZE = 450;
+const scale=1;
+const scalee = currentWidth / BASE_SIZE;
 const status = document.getElementById('status');
 // ③ 2D描画用の「コンテキスト」を取得する
 const ctx = canvas.getContext('2d');
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.clearRect(0, 0, canvas.width*scale, canvas.height*scale);
 ctx.fillStyle = 'black';
-ctx.roundRect(0, 0, 450, 450,20);   
+ctx.roundRect(0, 0, 450*scale, 450*scale,20*scale);   
 ctx.fill();
 // (x座標:50, y座標:50)の位置に、幅150、高さ100の四角形を描く
 ctx.fillStyle='green';
-ctx.fillRect(25,25,400,400);
+ctx.fillRect(25*scale,25*scale,400*scale,400*scale);
 //横線
 for(let i = 0;i<7;i++){
 ctx.beginPath();
-ctx.moveTo(25,75+i*50);
-ctx.lineTo(425,75+i*50);
+ctx.moveTo(25*scale,(75+i*50)*scale);
+ctx.lineTo(425*scale,(75+i*50)*scale);
 ctx.strokeStyle='black';
 ctx.stroke();
 }
 //縦線
 for(let i = 0;i<7;i++){
 ctx.beginPath();
-ctx.moveTo(75+i*50,25);
-ctx.lineTo(75+i*50,425);
+ctx.moveTo((75+i*50)*scale,25*scale);
+ctx.lineTo((75+i*50)*scale,425*scale);
 ctx.strokeStyle='black';
 ctx.stroke();
 }
@@ -88,8 +107,8 @@ paint();
 myCanvas.addEventListener('click',function(e){
 const rect = canvas.getBoundingClientRect();
 
-const mouseX = e.clientX - rect.left;
-const mouseY = e.clientY - rect.top;
+const mouseX = (e.clientX - rect.left)/scalee;
+const mouseY = (e.clientY - rect.top)/scalee;
 
 if(mouseX >= 25 && mouseX <= 425 && mouseY >= 25 && mouseY <= 425){
 const cellX=Math.floor((mouseX-25)/50);
@@ -105,10 +124,10 @@ function paint(){
 for(let i1=0;i1<8;i1++){
 for(let i2=0;i2<8;i2++){
 ctx.fillStyle='green';
-ctx.fillRect(30+i1*50,30+i2*50,40,40)
+ctx.fillRect((30+i1*50)*scale,(27+i2*50)*scale,44*scale,44*scale);
 if(board[i1][i2] != 0){
 ctx.beginPath();
-ctx.arc(50+i1*50, 50+i2*50, 20, 0, Math.PI * 2);
+ctx.arc((50+i1*50)*scale, (50+i2*50)*scale, (20)*scale, 0, Math.PI * 2);
 ctx.fillStyle=board[i1][i2]==1?'white':'black';
 ctx.fill();
 }
