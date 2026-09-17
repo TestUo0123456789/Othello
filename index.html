@@ -54,8 +54,9 @@ dialog::backdrop {
 <body>
 <!-- ダイアログ本体 -->
 <dialog id="myDialog">
-<p>カスタムダイアログの内容です。</p>
-<button id="closeBtn">閉じる</button>
+<h2>ゲームの設定</h2>
+
+<button id="closeBtn" class="decide-btn">開始！</button>
 </dialog>
 <p id="status"></p>
 <canvas id="myCanvas" width="450" height="450"></canvas>
@@ -107,6 +108,7 @@ board[4][3]=2;
 paint();
 
 myCanvas.addEventListener('click',function(e){
+scalee = currentWidth / BASE_SIZE;
 const rect = canvas.getBoundingClientRect();
 
 const mouseX = (e.clientX - rect.left)/scalee;
@@ -150,9 +152,6 @@ openBtn.addEventListener('click', () => {
 // 閉じるボタン（form method="dialog" があれば自動で閉じますが、JSで制御する場合）
 closeBtn.addEventListener('click', () => {
   dialog.close();
-});
-window.addEventListener('resize', () => {
-  scalee = currentWidth / BASE_SIZE;
 });
 
 </script>
