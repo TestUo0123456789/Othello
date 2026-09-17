@@ -6,6 +6,17 @@
 <style>
 body {
   touch-action: manipulation;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 15px;
+  padding-bottom: 30px; /* 一番下のボタンが隠れないための余白 */
 }
 .decide-btn{
 font-size: 20px;
@@ -16,12 +27,13 @@ border: none;
 border-radius: 8px;
 cursor: pointer;
 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-.greenBack{
-background-color: 
-}
-
 transition: background-color 0.2s,transform 0.2s;
 }
+.greenBack{
+background-color: green;
+}
+
+
 dialog {
   border: none;
   border-radius: 8px;
@@ -44,24 +56,21 @@ dialog::backdrop {
 
 </style>
 <body>
+<!-- ダイアログ本体 -->
+<dialog id="myDialog">
+<p>カスタムダイアログの内容です。</p>
+<button id="closeBtn">閉じる</button>
+</dialog>
 <p id="status"></p>
-<div class="game-container">
 
-<canvas id="myCanvas" width="450" height="450"></br>
+<canvas id="myCanvas" width="450" height="450"><br>
+<div class="controls-container">
 <button type="button" class="decide-btn">決定</button>
 <p id="player" class="greenBack">白のターン</p>
-<!-- ダイアログ本体 -->
-<fieldset> <!-- 意味や構造に合わせて必要に応じて調整 -->
-  <dialog id="myDialog">
-    <p>カスタムダイアログの内容です。</p>
-    <form method="dialog">
-      <button id="closeBtn">閉じる</button>
-    </form>
-  </dialog>
-</fieldset>
-</div>
 <!-- ダイアログを開くボタン -->
 <button id="openBtn">ダイアログを開く</button>
+<p>aaa</p>
+</div>
 <script>
 let board = Array.from({ length: 8 }, () => Array(8).fill(0));
 // ② JavaScriptでCanvas要素を取得する
@@ -69,31 +78,30 @@ const canvas = document.getElementById('myCanvas');
 const rect = canvas.getBoundingClientRect();
 const currentWidth = rect.width;
 const BASE_SIZE = 450;
-const scale=1;
-const scalee = currentWidth / BASE_SIZE;
+let scalee = currentWidth / BASE_SIZE;
 const status = document.getElementById('status');
 // ③ 2D描画用の「コンテキスト」を取得する
 const ctx = canvas.getContext('2d');
-ctx.clearRect(0, 0, canvas.width*scale, canvas.height*scale);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
 ctx.fillStyle = 'black';
-ctx.roundRect(0, 0, 450*scale, 450*scale,20*scale);   
+ctx.roundRect(0, 0, 450, 450,20);   
 ctx.fill();
 // (x座標:50, y座標:50)の位置に、幅150、高さ100の四角形を描く
 ctx.fillStyle='green';
-ctx.fillRect(25*scale,25*scale,400*scale,400*scale);
+ctx.fillRect(25,25,400,400);
 //横線
 for(let i = 0;i<7;i++){
 ctx.beginPath();
-ctx.moveTo(25*scale,(75+i*50)*scale);
-ctx.lineTo(425*scale,(75+i*50)*scale);
+ctx.moveTo(25,75+i*50);
+ctx.lineTo(425,75+i*50);
 ctx.strokeStyle='black';
 ctx.stroke();
 }
 //縦線
 for(let i = 0;i<7;i++){
 ctx.beginPath();
-ctx.moveTo((75+i*50)*scale,25*scale);
-ctx.lineTo((75+i*50)*scale,425*scale);
+ctx.moveTo(75+i*50,25);
+ctx.lineTo(75+i*50,425);
 ctx.strokeStyle='black';
 ctx.stroke();
 }
@@ -124,10 +132,10 @@ function paint(){
 for(let i1=0;i1<8;i1++){
 for(let i2=0;i2<8;i2++){
 ctx.fillStyle='green';
-ctx.fillRect((30+i1*50)*scale,(27+i2*50)*scale,44*scale,44*scale);
+ctx.fillRect(30+i1*50,27+i2*50,44,44);
 if(board[i1][i2] != 0){
 ctx.beginPath();
-ctx.arc((50+i1*50)*scale, (50+i2*50)*scale, (20)*scale, 0, Math.PI * 2);
+ctx.arc(50+i1*50, 50+i2*50, 20, 0, Math.PI * 2);
 ctx.fillStyle=board[i1][i2]==1?'white':'black';
 ctx.fill();
 }
@@ -148,6 +156,9 @@ openBtn.addEventListener('click', () => {
 // 閉じるボタン（form method="dialog" があれば自動で閉じますが、JSで制御する場合）
 closeBtn.addEventListener('click', () => {
   dialog.close();
+});
+window.addEventListener('resize', () => {
+  scalee = currentWidth / BASE_SIZE;
 });
 
 </script>
