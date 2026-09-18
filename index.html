@@ -48,7 +48,12 @@ dialog::backdrop {
   width: 90vmin;
   height: 90vmin;
 }
-
+#svg {
+  /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
+  width: 90vmin;
+  height: 90vmin;
+  overflow: visible;
+}
 
 </style>
 <body>
@@ -60,6 +65,9 @@ dialog::backdrop {
 </dialog>
 <p id="status"></p>
 <canvas id="myCanvas" width="450" height="450"></canvas>
+<svg id="svg" viewBox="0 0 450 450">
+<rect x="0" y="0" width="450" height="450" fill="black" rx="20" stroke="none"/>
+</svg>
 <div class="controls-container">
 <button type="button" class="decide-btn">決定</button>
 <p id="player" class="greenBack">白のターン</p>
@@ -106,6 +114,29 @@ board[4][4]=1;
 board[3][4]=2;
 board[4][3]=2;
 paint();
+
+const svgBoard = document.getElementById('svg');
+
+const START_POS = 25;
+const CELL_SIZE = 50;
+
+for (let row = 0; row < 8; row++) {
+  for (let col = 0; col < 8; col++) {
+    const x = START_POS + (col * CELL_SIZE);
+    const y = START_POS + (row * CELL_SIZE);
+
+    const cell = document.createElementNS("http://w3.org", "rect");
+    cell.setAttribute("x", x + 2);
+    cell.setAttribute("y", y + 2);
+    cell.setAttribute("width", CELL_SIZE - 4);
+    cell.setAttribute("height", CELL_SIZE - 4);
+    cell.setAttribute("fill", "green");
+    cell.setAttribute("rx", "4");
+    cell.dataset.col = col;
+    cell.dataset.row = row;
+    svgBoard.appendChild(cell);
+  }
+}
 
 myCanvas.addEventListener('click',function(e){
 scalee = currentWidth / BASE_SIZE;
