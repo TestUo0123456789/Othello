@@ -1,279 +1,434 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>オセロ</title>
-<style>
-body {
-  touch-action: manipulation;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.controls-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  margin-top: 15px;
-  padding-bottom: 30px; /* 一番下のボタンが隠れないための余白 */
-}
-.decide-btn{
-font-size: 20px;
-padding: 15px 40px;
-background-color: #007bff;
-color: #ffffff;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.greenBack{
-background-color: green;
-}
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オセロ</title>
+  <style>
+    body {
+      touch-action: manipulation;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .controls-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 15px;
+      padding-bottom: 30px;
+      /* 一番下のボタンが隠れないための余白 */
+    }
+
+    .decide-btn {
+      font-size: 20px;
+      padding: 15px 40px;
+      background-color: #007bff;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .greenBack {
+      background-color: green;
+    }
 
 
-dialog {
-  border: none;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
+    dialog {
+      border: none;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
 
-dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-#myCanvas {
-  /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
-  width: 90vmin;
-  height: 90vmin;
-}
-#svg {
-  /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
-  width: 90vmin;
-  height: 90vmin;
-  overflow: visible;
-}
+    dialog::backdrop {
+      background-color: rgba(0, 0, 0, 0.5);
+    }
 
-/* SVG全体を3D回転させる設定 */
-.othello-svg {
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.6s ease-in-out; /* 回転のスピード */
-}
+    #svg {
+      /* 1. 画面の横幅と縦幅のうち、狭い方にサイズを合わせる魔法の単位「vmin」 */
+      width: 90vmin;
+      height: 90vmin;
+      overflow: visible;
+    }
 
-/* クリック時にこのクラスがつくと180度回転 */
-.othello-svg.flipped {
-  transform: rotateY(180deg);
-}
+    .piece-inner {
+      transform-box: fill-box;
+      /* ★SVG要素自身の境界を計算の基準にする */
+      transform-origin: 20px 20px;
+      /* ★駒の中心を軸にして回す */
+      transform-style: preserve-3d;
+      /* 3D空間を維持 */
+      transition: transform 0.6s ease-in-out;
+      /* 0.6秒かけて回る */
+      cursor: pointer;
+    }
 
-/* 表と裏のグループ共通設定 */
-.front-group, .back-group {
-  position: absolute;
-  backface-visibility: hidden; /* 裏返ったときに見えなくする */
-}
+    .piece-filltype {
+      transform-origin: 24px 24px;
+    }
 
-/* 裏面のグループは最初から180度ひっくり返しておく */
-.back-group {
-  transform: rotateY(180deg);
-}
+    .piece-startype {
+      transform-origin: 21.5px 20.45px;
+    }
 
-</style>
-<body>
-<!-- ダイアログ本体 -->
-<dialog id="myDialog">
-<h2>ゲームの設定</h2>
+    /* 2. flipped クラスがついたら180度回転 */
+    .piece-instance.flipped .piece-inner {
+      transform: perspective(400px) rotateY(180deg);
+    }
 
-<button id="closeBtn" class="decide-btn">開始！</button>
-</dialog>
-<p id="status"></p>
-<canvas id="myCanvas" width="450" height="450"></canvas>
-<svg id="svg" viewBox="0 0 450 450">
-<rect x="0" y="0" width="450" height="450" fill="black" rx="20" stroke="none"/>
-<!--  クリップパス：画像を綺麗な真ん丸（半径45）にくり抜くための型紙 -->
-<defs>
-<clipPath id="circle-clip">
-<circle cx="50" cy="50" r="45" />
-</clipPath>
-</defs>
+    .front-group,
+    .back-group {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: opacity 0s 0.3s;
+      /* 回転半ばの0.3秒後に切り替え */
+    }
 
-<!--  表面（Front）のグループ -->
-<g class="front-group">
-<!-- 駒の枠線（フチをかっこよくしたい場合） -->
-<circle cx="50" cy="50" r="46" fill="none" stroke="#333" stroke-width="2"/>
-<!-- 自由な画像（clip-pathで丸く切り抜く） -->
-<image href="https://picsum.photos" x="5" y="5" width="90" height="90" clip-path="url(#circle-clip)" />
-</g>
+    .front-group {
+      opacity: 1;
+    }
 
-<!--  裏面（Back）のグループ -->
-<g class="back-group">
-<!-- 駒の枠線 -->
-<circle cx="50" cy="50" r="46" fill="none" stroke="#ccc" stroke-width="2"/>
-<!-- 自由な画像（clip-pathで丸く切り抜く） -->
-<image href="https://illustimage.com/photo/dl/1701.png?20151101" x="5" y="5" width="90" height="90" clip-path="url(#circle-clip)" />
-</g>
-</svg>
-<div class="controls-container">
-<button type="button" class="decide-btn">決定</button>
-<p id="player" class="greenBack">白のターン</p>
-<!-- ダイアログを開くボタン -->
-<button id="openBtn">ダイアログを開く</button>
-</div>
-<script>
-let board = Array.from({ length: 8 }, () => Array(8).fill(0));
-// ② JavaScriptでCanvas要素を取得する
-const canvas = document.getElementById('myCanvas');
-const rect = canvas.getBoundingClientRect();
-const currentWidth = rect.width;
-const BASE_SIZE = 450;
-let scalee = currentWidth / BASE_SIZE;
-const status = document.getElementById('status');
-// ③ 2D描画用の「コンテキスト」を取得する
-const ctx = canvas.getContext('2d');
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.fillStyle = 'black';
-ctx.roundRect(0, 0, 450, 450,20);   
-ctx.fill();
-// (x座標:50, y座標:50)の位置に、幅150、高さ100の四角形を描く
-ctx.fillStyle='green';
-ctx.fillRect(25,25,400,400);
-//横線
-for(let i = 0;i<7;i++){
-ctx.beginPath();
-ctx.moveTo(25,75+i*50);
-ctx.lineTo(425,75+i*50);
-ctx.strokeStyle='black';
-ctx.stroke();
-}
-//縦線
-for(let i = 0;i<7;i++){
-ctx.beginPath();
-ctx.moveTo(75+i*50,25);
-ctx.lineTo(75+i*50,425);
-ctx.strokeStyle='black';
-ctx.stroke();
-}
+    .back-group {
+      opacity: 0;
+      transform: rotateY(180deg);
+    }
 
-board[3][3]=1;
-board[4][4]=1;
-board[3][4]=2;
-board[4][3]=2;
-paint();
+    /* ひっくり返った時の表裏透明度 */
+    .flipped .front-group {
+      opacity: 0;
+    }
 
-const svgBoard = document.getElementById('svg');
+    .flipped .back-group {
+      opacity: 1;
+    }
 
-const START_POS = 25;
-const CELL_SIZE = 50;
+    /* ラジオボタン本体を非表示化 */
+    .button-group input[type="radio"] {
+      display: none;
+    }
 
-for (let row = 0; row < 8; row++) {
-  for (let col = 0; col < 8; col++) {
-    const x = START_POS + (col * CELL_SIZE);
-    const y = START_POS + (row * CELL_SIZE);
+    /* ラジオボタンのラベル */
+    .button-group label {
+      display: inline-block;
+      padding: 5px 10px;
+      background-color: #e0e0e0;
+      color: #333;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s, color 0.2s;
+    }
 
-    const cell = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    cell.setAttribute("x", x + 1);
-    cell.setAttribute("y", y + 1);
-    cell.setAttribute("width", CELL_SIZE - 2);
-    cell.setAttribute("height", CELL_SIZE - 2);
-    cell.setAttribute("fill", "green");
-    cell.dataset.col = col;
-    cell.dataset.row = row;
-    cell.addEventListener('click', (e) => {
-      const row = e.target.dataset.row;
-      const col = e.target.dataset.col;
-      click(row,col);
+    /* 選択 */
+    .button-group input[type="radio"]:checked+label {
+      background-color: #007bff;
+      color: #ffffff;
+      /* 文字 */
+      border-color: #007bff;
+    }
+
+    .dialogContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .optionsContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: left;
+    }
+
+    .option-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .option-title {
+      margin-right: 16px;
+    }
+
+    @keyframes blink {
+      0% {
+        opacity: 0;
+      }
+
+      100% {
+        opacity: 1;
+      }
+    }
+
+    .blink-icon {
+      animation: blink 1s ease-in-out infinite alternate;
+    }
+  </style>
+  <!-- ダイアログ本体 -->
+  <dialog id="myDialog">
+    <div class="dialogContainer">
+      <h2>ゲームの設定</h2>
+
+      <div class="option-row">
+        <label class="option-title">コマの画像のURL:</label>
+        <div>
+          <label>白:</label><input id="whitePieceURL" type="url"
+            value="https://upload.wikimedia.org/wikipedia/commons/d/da/Logo_JR_East.svg"><br>
+          <label>黒:</label><input id="blackPieceURL" type="url"
+            value="https://illustimage.com/photo/dl/1701.png?20151101">
+        </div>
+      </div>
+      <div class="optionsContainer">
+        <div class="option-row">
+          <label class="option-title">コマの形状:</label>
+          <div class="button-group">
+            <input type="radio" id="circle-op" name="piece-shape" value="circle" checked>
+            <label for="circle-op">丸</label>
+
+            <input type="radio" id="fill-op" name="piece-shape" value="fill">
+            <label for="fill-op">埋める</label>
+
+            <input type="radio" id="square-op" name="piece-shape" value="square">
+            <label for="square-op">四角形</label>
+
+            <input type="radio" id="star-op" name="piece-shape" value="star">
+            <label for="star-op">星形</label>
+          </div>
+        </div>
+
+        <div class="option-row">
+          <label class="option-title">コマの反転角度:</label>
+        </div>
+
+        <div class="option-row">
+          <label class="option-title"></label>
+        </div>
+      </div>
+      //画像切り抜きの際収めるかはみ出すかの選択肢も
+      <button id="closeBtn" class="decide-btn">開始！</button>
+    </div>
+  </dialog>
+  <p id="status"></p>
+  <svg id="svg" viewBox="0 0 450 450">
+    <rect x="0" y="0" width="450" height="450" fill="black" rx="20" stroke="none" />
+    <!--  クリップパス：画像を綺麗な真ん丸（半径45）にくり抜くための型紙 -->
+    <defs>
+      <polygon id="star" points="
+        22.50,1.00 
+        29.15,14.47 
+        44.00,16.63 
+        33.25,27.11 
+        35.79,41.90 
+        22.50,34.91 
+        9.21,41.90 
+        11.75,27.11 
+        1.00,16.63 
+        15.85,14.47
+        " />
+      <clipPath id="circle-clip">
+        <circle cx="0" cy="0" r="19" />
+      </clipPath>
+      <clipPath id="star-clip">
+        <use href="#star" x="-22.5" y="-22.5" />
+      </clipPath>
+      //丸の駒テンプレート
+      <g id="piece-temp-circle">
+        <g class="piece-inner">
+          <!--表面-->
+          <g class="front-group">
+            <!-- 駒の枠線（フチをかっこよくしたい場合） -->
+            <circle cx="0" cy="0" r="20" fill="white" stroke="#ccc" stroke-width="2" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://upload.wikimedia.org/wikipedia/commons/d/da/Logo_JR_East.svg" x="-19" y="-19"
+              width="38" height="38" clip-path="url(#circle-clip)" />
+          </g>
+
+          <!--裏面-->
+          <g class="back-group">
+            <!-- 駒の枠線 -->
+            <circle cx="0" cy="0" r="20" fill="black" stroke="#333" stroke-width="2" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/black.png" x="-19" y="-19" width="38" height="38"
+              clip-path="url(#circle-clip)" />
+          </g>
+        </g>
+      </g>
+
+      //すべて埋める形状の駒のテンプレート
+      <g id="piece-temp-fill">
+        <g class="piece-inner piece-filltype">
+          <!--表面-->
+          <g class="front-group">
+            <!-- 駒の枠線（フチをかっこよくしたい場合） -->
+            <rect x="-24" y="-24" width="48" height="48" fill="white" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-24" y="-24" width="48" height="48" />
+          </g>
+
+          <!--裏面-->
+          <g class="back-group">
+            <!-- 駒の枠線 -->
+            <rect x="-24" y="-24" width="48" height="48" fill="black" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/black.png" x="-24" y="-24" width="48" height="48" />
+          </g>
+        </g>
+      </g>
+
+      //四角い駒テンプレート
+      <g id="piece-temp-square">
+        <g class="piece-inner">
+          <!--表面-->
+          <g class="front-group">
+            <!-- 駒の枠線（フチをかっこよくしたい場合） -->
+            <rect x="-20" y="-20" width="40" height="40" fill="white" stroke="#ccc" stroke-width="2" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-19" y="-19" width="38" height="38" />
+          </g>
+
+          <!--裏面-->
+          <g class="back-group">
+            <!-- 駒の枠線 -->
+            <rect x="-20" y="-20" width="40" height="40" fill="black" stroke="#333" stroke-width="2" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/black.png" x="-19" y="-19" width="38" height="38" />
+          </g>
+        </g>
+      </g>
+
+      //星の駒テンプレート
+      <g id="piece-temp-star">
+        <g class="piece-inner piece-startype">
+          <!--表面-->
+          <g class="front-group">
+            <!-- 駒の枠線（フチをかっこよくしたい場合） -->
+            <use href="#star" x="-22.5" y="-22.5" fill="white" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-20" y="-20" width="40" height="40"
+              clip-path="url(#star-clip)" stroke="#ccc" strokeWidth="2" />
+            <use href="#star" x="-22.5" y="-22.5" fill="none" stroke="#ccc" stroke-width="2" />
+          </g>
+
+          <!--裏面-->
+          <g class="back-group">
+            <!-- 駒の枠線 -->
+            <use href="#star" x="-22.5" y="-22.5" fill="black" />
+            <!-- 自由な画像（clip-pathで丸く切り抜く） -->
+            <image href="https://testuo0123456789.github.io/Othello/black.png" x="-20" y="-20" width="40" height="40"
+              clip-path="url(#star-clip)" />
+            <use href="#star" x="-22.5" y="-22.5" fill="none" stroke="#333" stroke-width="2" />
+          </g>
+        </g>
+      </g>
+    </defs>
+  </svg>
+  <div class="controls-container">
+    <button type="button" class="decide-btn">決定</button>
+    <p id="player" class="greenBack">白のターン</p>
+    <!-- ダイアログを開くボタン -->
+    <button id="openBtn">ダイアログを開く</button>
+  </div>
+  <script>
+    //const selectedValue = document.querySelector('input[name="group"]:checked').value;
+    const dialog = document.getElementById('myDialog');
+    const openBtn = document.getElementById('openBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const svgBoard = document.getElementById('svg');
+    let template = document.getElementById('piece-temp-circle');
+    let piecesLayer;
+
+    let board = Array.from({length: 8}, () => Array(8).fill(0));
+
+    const START_POS = 25;
+    const CELL_SIZE = 50;
+    dialog.showModal();
+
+    closeBtn.addEventListener('click', () => {
+      dialog.close();
+      start();
     });
-    svgBoard.appendChild(cell);
-  }
-}
+    //駒の操作
 
-function placePiece(row, col) {
-  const cx = START_POS + (col * CELL_SIZE) + (CELL_SIZE / 2);
-  const cy = START_POS + (row * CELL_SIZE) + (CELL_SIZE / 2);
-  const radius = (CELL_SIZE / 2) - 6;
+    function putPiece(row, col) {
+      if (board[row][col] != 0) {
+        return false;
+      }
+      const clone = template.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.classList.add('piece-instance');
 
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("class", "piece-group");
+      const x = 25 + START_POS + col * CELL_SIZE;
+      const y = 25 + START_POS + row * CELL_SIZE;
+      clone.setAttribute('transform', `translate(${x}, ${y})`);
 
-  const blackDisc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  blackDisc.setAttribute("cx", cx);
-  blackDisc.setAttribute("cy", cy);
-  blackDisc.setAttribute("r", radius);
-  blackDisc.setAttribute("fill", "#222");
-  blackDisc.setAttribute("class", "black-side");
+      clone.addEventListener('click', function (e) {
+        e.stopPropagation();
+        this.classList.toggle('flipped');
+        board[row][col] = this.classList.contains('flipped') ? 2 : 1;
+        return true;
+      });
 
-  const whiteDisc = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  whiteDisc.setAttribute("cx", cx);
-  whiteDisc.setAttribute("cy", cy);
-  whiteDisc.setAttribute("r", radius);
-  whiteDisc.setAttribute("fill", "#fff");
-  whiteDisc.setAttribute("stroke", "#ccc");
-  whiteDisc.setAttribute("stroke-width", "1");
-  whiteDisc.setAttribute("class", "white-side");
+      piecesLayer.appendChild(clone);
+      board[row][col] = 1;
+    }
 
-  group.appendChild(blackDisc);
-  group.appendChild(whiteDisc);
+    function start() {
+      //ゲームのリセット・初期化
+      board = Array.from({length: 8}, () => Array(8).fill(0));
+      template = document.getElementById('piece-temp-' + document.querySelector('input[name="piece-shape"]:checked').value);
+      const whiteUrl = document.getElementById('whitePieceURL').value;
+      const blackUrl = document.getElementById('blackPieceURL').value;
+      if (whiteUrl) {
+        document.querySelectorAll('#svg defs .front-group image').forEach(img => {
+          img.setAttribute('href', whiteUrl);
+        });
+      }
+      if (blackUrl) {
+        document.querySelectorAll('#svg defs .back-group image').forEach(img => {
+          img.setAttribute('href', blackUrl);
+        });
+      }
+      board[3][3] = 1;
+      board[4][4] = 1;
+      board[3][4] = 2;
+      board[4][3] = 2;
 
-  group.addEventListener('click', () => {
-    group.classList.toggle('flipped');
-  });
-  svgBoard.appendChild(group);
-}
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const x = START_POS + (col * CELL_SIZE);
+          const y = START_POS + (row * CELL_SIZE);
 
-function click(row,col){
-  if(board[col][row] == 0){
-    board[col][row] == 1;
-    placePiece(row,col);
-  }
-}
-myCanvas.addEventListener('click',function(e){
-scalee = currentWidth / BASE_SIZE;
-const rect = canvas.getBoundingClientRect();
+          const cell = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          cell.setAttribute("x", x + 1);
+          cell.setAttribute("y", y + 1);
+          cell.setAttribute("width", CELL_SIZE - 2);
+          cell.setAttribute("height", CELL_SIZE - 2);
+          cell.setAttribute("fill", "green");
+          cell.dataset.col = col;
+          cell.dataset.row = row;
+          cell.addEventListener('click', (e) => {
+            const row = e.target.dataset.row;
+            const col = e.target.dataset.col;
+            //click(row,col);
+            putPiece(row, col);
+          });
+          svgBoard.appendChild(cell);
+        }
+      }
 
-const mouseX = (e.clientX - rect.left)/scalee;
-const mouseY = (e.clientY - rect.top)/scalee;
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("id", "piece-layer");
+      svgBoard.appendChild(g);
+      piecesLayer = document.getElementById('piece-layer');
+    }
+    //ここまで
+  </script>
+  </body>
 
-if(mouseX >= 25 && mouseX <= 425 && mouseY >= 25 && mouseY <= 425){
-const cellX=Math.floor((mouseX-25)/50);
-const cellY=Math.floor((mouseY-25)/50);
-status.textContent = cellX+","+cellY;
-board[cellX][cellY]=(board[cellX][cellY]+1)%3;
-paint();
-}else{
-status.textContent = "Out of range";
-}
-});
-function paint(){
-for(let i1=0;i1<8;i1++){
-for(let i2=0;i2<8;i2++){
-ctx.fillStyle='green';
-ctx.fillRect(30+i1*50,27+i2*50,44,44);
-if(board[i1][i2] != 0){
-ctx.beginPath();
-ctx.arc(50+i1*50, 50+i2*50, 20, 0, Math.PI * 2);
-ctx.fillStyle=board[i1][i2]==1?'white':'black';
-ctx.fill();
-}
-}
-}
-}
-
-
-const dialog = document.getElementById('myDialog');
-const openBtn = document.getElementById('openBtn');
-const closeBtn = document.getElementById('closeBtn');
-
-// 開くボタン
-openBtn.addEventListener('click', () => {
-  dialog.showModal(); // モーダルとして表示
-});
-
-// 閉じるボタン（form method="dialog" があれば自動で閉じますが、JSで制御する場合）
-closeBtn.addEventListener('click', () => {
-  dialog.close();
-});
-
-</script>
-</body>
 </html>
