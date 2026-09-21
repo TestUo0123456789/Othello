@@ -245,7 +245,7 @@
             <!-- 駒の枠線（フチをかっこよくしたい場合） -->
             <circle cx="0" cy="0" r="20" fill="white" stroke="#ccc" stroke-width="2" />
             <!-- 自由な画像（clip-pathで丸く切り抜く） -->
-            <image href="https://upload.wikimedia.org/wikipedia/commons/d/da/Logo_JR_East.svg" x="-19" y="-19"
+            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-19" y="-19"
               width="38" height="38" clip-path="url(#circle-clip)" />
           </g>
 
@@ -386,11 +386,13 @@
       const blackUrl = document.getElementById('blackPieceURL').value;
       if (whiteUrl) {
         document.querySelectorAll('#svg defs .front-group image').forEach(img => {
+          img.removeAttribute('href');
           img.setAttribute('href', whiteUrl);
         });
       }
       if (blackUrl) {
         document.querySelectorAll('#svg defs .back-group image').forEach(img => {
+          img.removeAttribute('href');
           img.setAttribute('href', blackUrl);
         });
       }
