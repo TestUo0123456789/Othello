@@ -214,7 +214,7 @@
 
         <div class="option-row">
           <label class="option-title">コマの回転軸角度(コマが丸の場合のみ):</label>
-          <input type="number" id="angleOfPiece" name="angleOfPiece" min="0" max="360" step="1" value="0"> °
+          <input type="number" pattern="[0-9]*" id="angleOfPiece" name="angleOfPiece" min="0" max="360" step="1" value="0"> °
           <canvas id="angleCanvas" width="70" height="60"></canvas>
         </div>
 
@@ -407,7 +407,7 @@
       clone.setAttribute('transform', `translate(${x}, ${y})`);
       if (isBlack) {
         clone.dataset.deg = 180;
-        clone.style.setProperty('--flip-deg', '180deg');
+        clone.style.setProperty('--flip-deg', '180');
         clone.classList.add('flipped');
       }
 
