@@ -10,6 +10,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;;
     }
 
     .controls-container {
@@ -58,26 +59,14 @@
     .piece-inner {
       transform-box: fill-box;
       /* ★SVG要素自身の境界を計算の基準にする */
-      transform-origin: 20px 20px;
+      transform-origin: center;
       /* ★駒の中心を軸にして回す */
       transform-style: preserve-3d;
       /* 3D空間を維持 */
       transition: transform 0.6s ease-in-out;
       /* 0.6秒かけて回る */
       cursor: pointer;
-    }
-
-    .piece-filltype {
-      transform-origin: 24px 24px;
-    }
-
-    .piece-startype {
-      transform-origin: 21.5px 20.45px;
-    }
-
-    /* 2. flipped クラスがついたら180度回転 */
-    .piece-instance.flipped .piece-inner {
-      transform: perspective(400px) rotateY(180deg);
+      transform: perspective(400px) rotate3d(var(--rx, 0), var(--ry, 1), 0, calc(var(--flip-deg, 0) * 1deg));
     }
 
     .front-group,
@@ -104,6 +93,12 @@
 
     .flipped .back-group {
       opacity: 1;
+    }
+
+    .no-transition .piece-inner,
+    .no-transition .front-group,
+    .no-transition .back-group {
+      transition: none !important;
     }
 
     /* ラジオボタン本体を非表示化 */
@@ -169,6 +164,12 @@
     .blink-icon {
       animation: blink 1s ease-in-out infinite alternate;
     }
+
+    .back-circle {
+      transform-box: fill-box;
+      transform-origin: center;
+      transform: rotate(calc(var(--backAngle, 0) * 1deg));
+    }
   </style>
   <!-- ダイアログ本体 -->
   <dialog id="myDialog">
@@ -203,11 +204,27 @@
         </div>
 
         <div class="option-row">
-          <label class="option-title">コマの反転角度:</label>
+          <label class="option-title">コマの回転軸角度(コマが丸の場合のみ):</label>
+          <input type="number" id="angleOfPiece" name="angleOfPiece" min="0" max="360" step="1" value="0"> °
+          <canvas id="angleCanvas" width="70" height="60"></canvas>
         </div>
 
         <div class="option-row">
           <label class="option-title"></label>
+        </div>
+
+        <div class="option-row">
+          <label class="option-title">先手:</label>
+          <div class="button-group">
+            <input type="radio" id="random-op-first" name="first-player" value="random" checked>
+            <label for="random-op-first">ランダム</label>
+
+            <input type="radio" id="white-op-first" name="first-player" value="white">
+            <label for="white-op-first">白</label>
+
+            <input type="radio" id="black-op-first" name="first-player" value="black">
+            <label for="black-op-first">黒</label>
+          </div>
         </div>
       </div>
       //画像切り抜きの際収めるかはみ出すかの選択肢も
@@ -245,8 +262,8 @@
             <!-- 駒の枠線（フチをかっこよくしたい場合） -->
             <circle cx="0" cy="0" r="20" fill="white" stroke="#ccc" stroke-width="2" />
             <!-- 自由な画像（clip-pathで丸く切り抜く） -->
-            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-19" y="-19"
-              width="38" height="38" clip-path="url(#circle-clip)" />
+            <image href="https://testuo0123456789.github.io/Othello/white.png" x="-19" y="-19" width="38" height="38"
+              clip-path="url(#circle-clip)" />
           </g>
 
           <!--裏面-->
@@ -255,14 +272,14 @@
             <circle cx="0" cy="0" r="20" fill="black" stroke="#333" stroke-width="2" />
             <!-- 自由な画像（clip-pathで丸く切り抜く） -->
             <image href="https://testuo0123456789.github.io/Othello/black.png" x="-19" y="-19" width="38" height="38"
-              clip-path="url(#circle-clip)" />
+              clip-path="url(#circle-clip)" class="back-circle" />
           </g>
         </g>
       </g>
 
       //すべて埋める形状の駒のテンプレート
       <g id="piece-temp-fill">
-        <g class="piece-inner piece-filltype">
+        <g class="piece-inner">
           <!--表面-->
           <g class="front-group">
             <!-- 駒の枠線（フチをかっこよくしたい場合） -->
@@ -304,7 +321,7 @@
 
       //星の駒テンプレート
       <g id="piece-temp-star">
-        <g class="piece-inner piece-startype">
+        <g class="piece-inner">
           <!--表面-->
           <g class="front-group">
             <!-- 駒の枠線（フチをかっこよくしたい場合） -->
@@ -340,45 +357,97 @@
     const openBtn = document.getElementById('openBtn');
     const closeBtn = document.getElementById('closeBtn');
     const svgBoard = document.getElementById('svg');
+    const angleOfPiece = document.getElementById('angleOfPiece');
+    const angleCanvas = document.getElementById('angleCanvas');
+    const ctx = angleCanvas.getContext("2d");
     let template = document.getElementById('piece-temp-circle');
-    let piecesLayer;
 
     let board = Array.from({length: 8}, () => Array(8).fill(0));
 
     const START_POS = 25;
     const CELL_SIZE = 50;
+
+    angleOfPiece.addEventListener('change', (e) => {
+      angleExample(Number(e.target.value));
+    });
+    angleExample(0);
+    drawBoard();
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("id", "piece-layer");
+    svgBoard.appendChild(g);
+    const piecesLayer = document.getElementById('piece-layer');
     dialog.showModal();
 
     closeBtn.addEventListener('click', () => {
       dialog.close();
+      setPieceRotationAxis(Number(angleOfPiece.value));
       start();
     });
     //駒の操作
 
-    function putPiece(row, col) {
+    function putPiece(row, col, isBlack = false) {
       if (board[row][col] != 0) {
         return false;
       }
       const clone = template.cloneNode(true);
       clone.removeAttribute('id');
       clone.classList.add('piece-instance');
-
+      clone.classList.add('no-transition');
       const x = 25 + START_POS + col * CELL_SIZE;
       const y = 25 + START_POS + row * CELL_SIZE;
       clone.setAttribute('transform', `translate(${x}, ${y})`);
+      if (isBlack) {
+        clone.dataset.deg = 180;
+        clone.style.setProperty('--flip-deg', '180deg');
+        clone.classList.add('flipped');
+      }
 
       clone.addEventListener('click', function (e) {
         e.stopPropagation();
-        this.classList.toggle('flipped');
-        board[row][col] = this.classList.contains('flipped') ? 2 : 1;
-        return true;
+        const currentDeg = (parseInt(this.dataset.deg, 10) || 0) + 180;
+        this.dataset.deg = currentDeg;
+        this.style.setProperty('--flip-deg', currentDeg);
+        const isFlipped = (currentDeg / 180) % 2 !== 0;
+        this.classList.toggle('flipped', isFlipped);
+        board[row][col] = isFlipped ? 2 : 1;
       });
 
       piecesLayer.appendChild(clone);
       board[row][col] = 1;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          clone.classList.remove('no-transition');
+        });
+      });
+      return true;
+    }
+
+    function drawBoard() {
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const x = START_POS + (col * CELL_SIZE);
+          const y = START_POS + (row * CELL_SIZE);
+
+          const cell = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          cell.setAttribute("x", x + 1);
+          cell.setAttribute("y", y + 1);
+          cell.setAttribute("width", CELL_SIZE - 2);
+          cell.setAttribute("height", CELL_SIZE - 2);
+          cell.setAttribute("fill", "green");
+          cell.dataset.col = col;
+          cell.dataset.row = row;
+          cell.addEventListener('click', (e) => {
+            const row = e.target.dataset.row;
+            const col = e.target.dataset.col;
+            putPiece(row, col);
+          });
+          svgBoard.appendChild(cell);
+        }
+      }
     }
 
     function start() {
+      piecesLayer.textContent = "";
       //ゲームのリセット・初期化
       board = Array.from({length: 8}, () => Array(8).fill(0));
       template = document.getElementById('piece-temp-' + document.querySelector('input[name="piece-shape"]:checked').value);
@@ -396,38 +465,33 @@
           img.setAttribute('href', blackUrl);
         });
       }
-      board[3][3] = 1;
-      board[4][4] = 1;
-      board[3][4] = 2;
-      board[4][3] = 2;
+      putPiece(3, 3, false);
+      putPiece(4, 4, false);
+      putPiece(3, 4, true);
+      putPiece(4, 3, true);
+    }
 
-      for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-          const x = START_POS + (col * CELL_SIZE);
-          const y = START_POS + (row * CELL_SIZE);
+    function setPieceRotationAxis(degree) {
+      const angle = (degree + 90) * (Math.PI / 180);
+      svgBoard.style.setProperty('--rx', Math.cos(angle));
+      svgBoard.style.setProperty('--ry', Math.sin(angle));
+      svgBoard.style.setProperty('--backAngle', degree * (-2))
+    }
+    function angleExample(degree) {
+      ctx.clearRect(0, 0, angleCanvas.width, angleCanvas.height);
+      ctx.beginPath();
+      ctx.arc(35, 30, 29, 0, 2 * Math.PI);
 
-          const cell = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          cell.setAttribute("x", x + 1);
-          cell.setAttribute("y", y + 1);
-          cell.setAttribute("width", CELL_SIZE - 2);
-          cell.setAttribute("height", CELL_SIZE - 2);
-          cell.setAttribute("fill", "green");
-          cell.dataset.col = col;
-          cell.dataset.row = row;
-          cell.addEventListener('click', (e) => {
-            const row = e.target.dataset.row;
-            const col = e.target.dataset.col;
-            //click(row,col);
-            putPiece(row, col);
-          });
-          svgBoard.appendChild(cell);
-        }
-      }
+      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 2;
 
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("id", "piece-layer");
-      svgBoard.appendChild(g);
-      piecesLayer = document.getElementById('piece-layer');
+      ctx.stroke();
+
+      ctx.beginPath();
+      const angle = (degree + 90) * (Math.PI / 180);
+      ctx.moveTo(35 + Math.cos(angle) * (30), 30 + Math.sin(angle) * (30));
+      ctx.lineTo(35 + Math.cos(angle) * (-30), 30 + Math.sin(angle) * (-30));
+      ctx.stroke();
     }
     //ここまで
   </script>
