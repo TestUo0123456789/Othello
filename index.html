@@ -11,7 +11,6 @@
       flex-direction: column;
       align-items: center;
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", sans-serif;
-      ;
     }
 
     .controls-container {
@@ -21,7 +20,7 @@
       width: 100%;
       margin-top: 15px;
       padding-bottom: 30px;
-      /* 一番下のボタンが隠れないための余白 */
+      row-gap: 10px;
     }
 
     .decide-btn {
@@ -34,8 +33,24 @@
       cursor: pointer;
     }
 
+    .pass-btn {
+      background-color: red;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .greenBack {
       background-color: green;
+      font-size: 20px;
+    }
+
+    .player {
+      font-size: 30px;
+      font-weight: bold;
+      color: white;
     }
 
 
@@ -55,6 +70,7 @@
       width: 90vmin;
       height: 90vmin;
       overflow: visible;
+      perspective-origin: 50% 30%;
     }
 
     .piece-inner {
@@ -68,6 +84,7 @@
       /* 0.6秒かけて回る */
       cursor: pointer;
       transform: perspective(400px) rotate3d(var(--rx, 0), var(--ry, 1), 0, calc(var(--flip-deg, 0) * 1deg));
+      filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.3));
     }
 
     .front-group,
@@ -139,6 +156,7 @@
       display: flex;
       flex-direction: column;
       align-items: left;
+      padding: 5px;
     }
 
     .option-row {
@@ -179,22 +197,77 @@
       transform-origin: center;
       transform: rotate(calc(var(--backAngle, 0) * 1deg));
     }
+
+    #pieceAngleSetting {
+      border: 2px solid #333333;
+      border-radius: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      /* 境界線を重ねる */
+      width: auto;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      /* 枠線の太さ、種類、色 */
+      padding: 8px;
+    }
+
+    .sub-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
   </style>
   <!-- ダイアログ本体 -->
   <dialog id="myDialog">
     <div class="dialogContainer">
       <h2>ゲームの設定</h2>
-
-      <div class="option-row">
-        <label class="option-title">コマの画像のURL:</label>
-        <div>
-          <label>白:</label><input id="whitePieceURL" type="url"
-            value="https://upload.wikimedia.org/wikipedia/commons/d/da/Logo_JR_East.svg"><br>
-          <label>黒:</label><input id="blackPieceURL" type="url"
-            value="https://illustimage.com/photo/dl/1701.png?20151101">
-        </div>
-      </div>
       <div class="optionsContainer">
+        <div class="option-row">
+          <label class="option-title">コマの画像元:</label>
+          <div>
+            <div class="sub-row">
+              <label>白:</label>
+              <div>
+                <div class="button-group">
+                  <input type="radio" id="default-op-design-w" name="piece-design-w" value="default" checked>
+                  <label for="default-op-design-w">デフォルト</label>
+
+                  <input type="radio" id="url-op-design-w" name="piece-design-w" value="url">
+                  <label for="url-op-design-w">URL</label>
+
+                  <input type="radio" id="local-op-design-w" name="piece-design-w" value="local">
+                  <label for="local-op-design-w">ローカルファイル</label>
+                </div>
+                <div id="image-file-w">
+                </div>
+              </div>
+            </div>
+            <div class="sub-row">
+              <label>黒:</label>
+              <div>
+                <div class="button-group">
+                  <input type="radio" id="default-op-design-b" name="piece-design-b" value="default" checked>
+                  <label for="default-op-design-b">デフォルト</label>
+
+                  <input type="radio" id="url-op-design-b" name="piece-design-b" value="url">
+                  <label for="url-op-design-b">URL</label>
+
+                  <input type="radio" id="local-op-design-b" name="piece-design-b" value="local">
+                  <label for="local-op-design-b">ローカルファイル</label>
+                </div>
+                <div id="image-file-b">
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="option-row">
           <label class="option-title">コマの形状:</label>
           <div class="button-group">
@@ -212,14 +285,34 @@
           </div>
         </div>
 
-        <div class="option-row">
-          <label class="option-title">コマの回転軸角度(コマが丸の場合のみ):</label>
-          <input type="number" pattern="[0-9]*" id="angleOfPiece" name="angleOfPiece" min="0" max="360" step="1" value="0"> °
-          <canvas id="angleCanvas" width="70" height="60"></canvas>
+        <div id="pieceAngleSetting">
+          <label class="option-title">コマの回転設定(*コマが丸の場合のみ設定できます)</label>
+          <div class="option-row">
+            <label class="option-title">コマの回転軸:</label>
+            <div class="button-group">
+              <input type="radio" id="default-op-flip" name="flipType" value="default" checked>
+              <label for="default-op-flip">デフォルト</label>
+
+              <input type="radio" id="custom-op-flip" name="flipType" value="custom">
+              <label for="custom-op-flip">カスタム</label>
+
+              <input type="radio" id="random-op-flip" name="flipType" value="random">
+              <label for="random-op-flip">ランダム</label>
+
+              <input type="radio" id="radial-op-flip" name="flipType" value="radial">
+              <label for="radial-op-flip">放射状</label>
+            </div>
+          </div>
+          <div class="option-row">
+            <label class="option-title">カスタム値:</label>
+            <input type="number" pattern="[0-9]*" id="angleOfPiece" name="angleOfPiece" min="0" max="360" step="1"
+              value="0" disabled> °
+            <canvas id="angleCanvas" width="70" height="60"></canvas>
+          </div>
         </div>
 
         <div class="option-row">
-          <label class="option-title"></label>
+          <label class="option-title">盤の色:</label><input type="color" id="boardColor" value="green">
         </div>
 
         <div class="option-row">
@@ -355,9 +448,26 @@
     </defs>
   </svg>
   <div class="controls-container">
-    <button type="button" class="decide-btn">決定</button>
-    <p id="player" class="greenBack">白のターン</p>
-    <!-- ダイアログを開くボタン -->
+    <button id="decideButton" type="button" class="decide-btn" disabled>決定</button>
+    <button id="passButton" type="button" class="decide-btn pass-btn">パス</button>
+    <p id="player" class="greenBack"><span id="playerSpan" class="player">白</span>のターン</p>
+    <table>
+      <caption>コマ数</caption>
+      <tbody>
+        <tr>
+          <th>白</th>
+          <td id="whitePieceCount">2</td>
+        </tr>
+        <tr>
+          <th>黒</th>
+          <td id="blackPieceCount">2</td>
+        </tr>
+        <tr>
+          <th>合計</th>
+          <td id="totalPieceCount">4/64</td>
+        </tr>
+      </tbody>
+    </table>
     <button id="openBtn">ダイアログを開く</button>
   </div>
   <script>
@@ -369,6 +479,19 @@
     const angleOfPiece = document.getElementById('angleOfPiece');
     const angleCanvas = document.getElementById('angleCanvas');
     const ctx = angleCanvas.getContext("2d");
+    const imageSelect_w = document.getElementById("image-file-w");
+    const imageSelect_b = document.getElementById("image-file-b");
+    const boardColor = document.getElementById('boardColor');
+    const whitePieceCount = document.getElementById('whitePieceCount');
+    const blackPieceCount = document.getElementById('blackPieceCount');
+    const totalPieceCount = document.getElementById('totalPieceCount');
+    const decideButton = document.getElementById('decideButton');
+    const passButton = document.getElementById('passButton');
+    const playerSpan = document.getElementById('playerSpan');
+    //ラジオボタン
+    const designRadios_w = document.querySelectorAll('input[name="piece-design-w"]');
+    const designRadios_b = document.querySelectorAll('input[name="piece-design-b"]');
+    const flipType = document.querySelectorAll('input[name="flipType"]');
     let template = document.getElementById('piece-temp-circle');
 
     let board = Array.from({length: 8}, () => Array(8).fill(0));
@@ -376,10 +499,46 @@
     const START_POS = 25;
     const CELL_SIZE = 50;
 
+    let totalPiece = 4;
+    let whitePiece = 2;
+    let blackPiece = 2;
+
+    let blinkPiece;
+
+    let IsCurrentTrunBlack = false;
+
+    const imageSelectContent = {
+      default: "",
+      url: '<input id="XXXXXPieceURL" type="url" value="https://upload.wikimedia.org/wikipedia/commons/d/da/Logo_JR_East.svg">',
+      local: '<input type="file" id="XXXXXPieceFile" accept="image/*">'
+    };
+
     angleOfPiece.addEventListener('change', (e) => {
       angleExample(Number(e.target.value));
     });
-    angleExample(0);
+    //ラジオボタン
+    designRadios_w.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        imageSelect_w.innerHTML = imageSelectContent[e.target.value].replace("XXXXX", "white");
+      });
+    })
+    designRadios_b.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        imageSelect_b.innerHTML = imageSelectContent[e.target.value].replace("XXXXX", "black");
+      });
+    })
+    flipType.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value == "custom") {
+          angleOfPiece.disabled = false;
+          angleExample(angleOfPiece.value);
+        } else {
+          angleOfPiece.disabled = true;
+          angleExample("a");
+        }
+      });
+    })
+    angleExample("a");
     drawBoard();
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("id", "piece-layer");
@@ -396,7 +555,7 @@
 
     function putPiece(row, col, isBlack = false) {
       if (board[row][col] != 0) {
-        return false;
+        return null;
       }
       const clone = template.cloneNode(true);
       clone.removeAttribute('id');
@@ -409,26 +568,39 @@
         clone.dataset.deg = 180;
         clone.style.setProperty('--flip-deg', '180');
         clone.classList.add('flipped');
+      } else {
+        clone.dataset.deg = 0;
+        clone.style.setProperty('--flip-deg', '0');
       }
-
-      clone.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const currentDeg = (parseInt(this.dataset.deg, 10) || 0) + 180;
-        this.dataset.deg = currentDeg;
-        this.style.setProperty('--flip-deg', currentDeg);
-        const isFlipped = (currentDeg / 180) % 2 !== 0;
-        this.classList.toggle('flipped', isFlipped);
-        board[row][col] = isFlipped ? 2 : 1;
-      });
+      clone.dataset.x = col;
+      clone.dataset.y = row;
 
       piecesLayer.appendChild(clone);
-      board[row][col] = 1;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           clone.classList.remove('no-transition');
         });
       });
-      return true;
+      return clone;
+    }
+
+    function changePiece(x, y) {
+      const targetPiece = piecesLayer.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+      const currentDeg = (parseInt(targetPiece.dataset.deg, 10) || 0) + 180;
+      targetPiece.dataset.deg = currentDeg;
+      targetPiece.style.setProperty('--flip-deg', currentDeg);
+      const isFlipped = (currentDeg / 180) % 2 !== 0;
+      targetPiece.classList.toggle('flipped', isFlipped);
+      board[y][x] = isFlipped ? 2 : 1;
+      if (isFlipped) {
+        blackPiece++;
+        whitePiece--;
+      } else {
+        whitePiece++;
+        blackPiece--;
+      }
+      whitePieceCount.textContent = whitePiece;
+      blackPieceCount.textContent = blackPiece;
     }
 
     function drawBoard() {
@@ -445,23 +617,46 @@
           cell.setAttribute("fill", "green");
           cell.dataset.col = col;
           cell.dataset.row = row;
+          cell.classList.add("boards");
           cell.addEventListener('click', (e) => {
             const row = e.target.dataset.row;
             const col = e.target.dataset.col;
-            putPiece(row, col);
+            blinkPiece?.remove();
+            blinkPiece = putPiece(row, col, IsCurrentTrunBlack);
+            blinkPiece.classList.add("blink-icon");
+            decideButton.disabled = !(IsAbleToPut(col, row, IsCurrentTrunBlack));
           });
           svgBoard.appendChild(cell);
         }
       }
     }
-
-    function start() {
+    function changeBoardColor(color) {
+      const boards = document.querySelectorAll('.boards');
+      boards.forEach((board) => {
+        board.setAttribute("fill", color);
+      });
+    }
+    async function start() {
       piecesLayer.textContent = "";
       //ゲームのリセット・初期化
       board = Array.from({length: 8}, () => Array(8).fill(0));
       template = document.getElementById('piece-temp-' + document.querySelector('input[name="piece-shape"]:checked').value);
-      const whiteUrl = document.getElementById('whitePieceURL').value;
-      const blackUrl = document.getElementById('blackPieceURL').value;
+      const imageType_w = document.querySelector('input[name="piece-design-w"]:checked').value;
+      const imageType_b = document.querySelector('input[name="piece-design-b"]:checked').value;
+      let whiteUrl;
+      let blackUrl;
+      if (imageType_w == "url") {
+        whiteUrl = document.getElementById('whitePieceURL').value;
+      }
+      else if (imageType_w == "local") {
+        whiteUrl = await fileToDataUrl(document.getElementById('whitePieceFile').files[0]);
+      }
+      if (imageType_b == "url") {
+        blackUrl = document.getElementById('blackPieceURL').value;
+      }
+      else if (imageType_b == "local") {
+        blackUrl = await fileToDataUrl(document.getElementById('blackPieceFile').files[0]);
+      }
       if (whiteUrl) {
         document.querySelectorAll('#svg defs .front-group image').forEach(img => {
           img.removeAttribute('href');
@@ -474,10 +669,15 @@
           img.setAttribute('href', blackUrl);
         });
       }
+      changeBoardColor(boardColor.value);
       putPiece(3, 3, false);
       putPiece(4, 4, false);
       putPiece(3, 4, true);
       putPiece(4, 3, true);
+      board[3][3] = 1;
+      board[4][4] = 1;
+      board[4][3] = 2;
+      board[3][4] = 2;
     }
 
     function setPieceRotationAxis(degree) {
@@ -503,6 +703,145 @@
       ctx.stroke();
     }
     //ここまで
+
+    const DIRECTIONS = [
+      [0, -1],//上
+      [1, -1],//右上
+      [1, 0],//右
+      [1, 1],//右下
+      [0, 1],//下
+      [-1, 1],//左下
+      [-1, 0],//左
+      [-1, -1]//左上
+    ]
+
+    async function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) {
+          resolve(null);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function IsAbleToPut(x, y, isBlack) {
+      const sameID = isBlack ? 2 : 1;
+      const differentID = isBlack ? 1 : 2;
+      let currentX = Number(x);
+      let currentY = Number(y);
+      let flag = true;
+      for (let i = 0; i < 8; i++) {
+        currentX = Number(x) + DIRECTIONS[i][0];
+        currentY = Number(y) + DIRECTIONS[i][1];
+        if (!(currentX >= 8 || currentX < 0 || currentY >= 8 || currentY < 0)) {
+          if (board[currentY][currentX] != differentID) {
+            continue;
+          }
+        }
+        while (flag) {
+          currentX += DIRECTIONS[i][0];
+          currentY += DIRECTIONS[i][1];
+          if (currentX >= 8 || currentX < 0 || currentY >= 8 || currentY < 0) {
+            flag = false;
+          }
+          else if (board[currentY][currentX] == 0) {
+            flag = false;
+          }
+          else if (board[currentY][currentX] == sameID) {
+            console.log("true");
+            return true;
+          }
+        }
+        flag = true;
+      }
+      console.log("false");
+      return false;
+    }
+    decideButton.addEventListener('click', () => {
+      blinkPiece.classList.remove("blink-icon");
+      const isBlack = (blinkPiece.dataset.deg / 180) % 2 !== 0;
+      board[blinkPiece.dataset.y][blinkPiece.dataset.x] = isBlack ? 2 : 1;
+      totalPiece++;
+      if (isBlack) {
+        blackPiece++;
+      } else {
+        whitePiece++;
+      }
+
+      whitePieceCount.textContent = whitePiece;
+      blackPieceCount.textContent = blackPiece;
+      totalPieceCount.textContent = totalPiece + "/64";
+      const x = Number(blinkPiece.dataset.x);
+      const y = Number(blinkPiece.dataset.y);
+      blinkPiece = null;
+      playerSpan.style.color = IsCurrentTrunBlack ? "white" : "black";
+      playerSpan.textContent = IsCurrentTrunBlack ? "白" : "黒";
+      IsCurrentTrunBlack = IsCurrentTrunBlack ? false : true;
+      decideButton.disabled = true;
+      alotofchange(x, y, isBlack);
+    });
+    async function alotofchange(x, y, isBlack) {
+      //方向別判定
+      let ableToChange = [false, false, false, false, false, false, false, false];
+      const sameID = isBlack ? 2 : 1;
+      const differentID = isBlack ? 1 : 2;
+      let currentX = Number(x);
+      let currentY = Number(y);
+      let flag = true;
+      for (let i = 0; i < 8; i++) {
+        currentX = Number(x) + DIRECTIONS[i][0];
+        currentY = Number(y) + DIRECTIONS[i][1];
+        if (!(currentX >= 8 || currentX < 0 || currentY >= 8 || currentY < 0)) {
+          if (board[currentY][currentX] != differentID) {
+            continue;
+          }
+        }
+        while (flag) {
+          currentX += DIRECTIONS[i][0];
+          currentY += DIRECTIONS[i][1];
+          if (currentX >= 8 || currentX < 0 || currentY >= 8 || currentY < 0) {
+            flag = false;
+          }
+          else if (board[currentY][currentX] == 0) {
+            flag = false;
+          }
+          else if (board[currentY][currentX] == sameID) {
+            console.log("true");
+            ableToChange[i] = true
+          }
+        }
+        flag = true;
+      }
+      //方向別判定はここまで
+      let varX = 0;
+      let varY = 0;
+      for (let i = 0; i < 8; i++) {
+        for (let i2 = 0; i2 < 8; i2++) {
+          varX = x + DIRECTIONS[i2][0] * (i + 1);
+          varY = y + DIRECTIONS[i2][1] * (i + 1);
+          if (ableToChange[i2] && (board[varY][varX] == differentID)) {
+            changePiece(varX, varY);
+          } else {
+            ableToChange[i2] = false;
+          }
+        }
+        await sleep(300);
+      }
+    }
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    passButton.addEventListener("click", () => {
+      blinkPiece?.remove();
+      blinkPiece = null;
+      playerSpan.style.color = IsCurrentTrunBlack ? "white" : "black";
+      playerSpan.textContent = IsCurrentTrunBlack ? "白" : "黒";
+      IsCurrentTrunBlack = IsCurrentTrunBlack ? false : true;
+      decideButton.disabled = true;
+    });
   </script>
   </body>
 
